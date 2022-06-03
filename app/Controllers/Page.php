@@ -13,7 +13,7 @@ use Endroid\QrCode\Writer\PngWriter;
 
 class Page extends BaseController
 {
-    protected $helpers = ['form']; 
+    protected $helpers = ['form', 'global']; 
 
     public function index()
     {
@@ -146,18 +146,39 @@ class Page extends BaseController
         return view('apply');
     }
 
+    public function applyView($application_id)
+    {
+        $db = db_connect();
+        $query = $db->query('SELECT applications.*, application_users.* FROM applications JOIN application_users ON applications.application_user_id = application_users.id WHERE applications.id="'.$application_id.'" GROUP BY applications.application_user_id');
+
+        $application_data = null;
+        foreach($query->getResult() as $application) {
+            $application_data = $application;
+            $application_data->company = json_decode($application->companies, true);
+            $application_data->reference = json_decode($application->references, true);
+            break;
+        }
+
+        $data = array(
+            'application' => $application_data,
+            'application_id' => $application_id
+        );
+
+        return view('apply_view', $data);
+    }
+
     public function qrTest()
     {
         $result = Builder::create()
         ->writer(new PngWriter())
         ->writerOptions([])
-        ->data('http://172.16.1.45:9006/apply')
+        ->data('http://jpdinvestmentsllc.com/apply')
         ->encoding(new Encoding('UTF-8'))
         ->errorCorrectionLevel(new ErrorCorrectionLevelHigh())
         ->size(300)
         ->margin(10)
         ->roundBlockSizeMode(new RoundBlockSizeModeMargin())
-        ->logoPath(APPPATH.'../public/assets/images/qr-logo.jpg')
+        // ->logoPath(APPPATH.'../public/assets/images/qr-logo.jpg')
         // ->labelText('This is the label1')
         // ->labelFont(new NotoSans(20))
         // ->labelAlignment(new LabelAlignmentCenter())
@@ -253,6 +274,40 @@ class Page extends BaseController
 
         $query = $db->query("INSERT INTO applications(`application_user_id`, `location_apply_for`, `before_apply`, `age_18`, `how_hear`, `how_hear_referred`, `start_date`, `perform_essential_functions`, `restaurant_experience_food_preparation`, `restaurant_experience_sanitation`, `able_work_nights`, `food_handler_permit`, `obtain_food_handler_permit`, `available_to_work`, `companies`, `references`) VALUES('".($application_user_id)."', '".(isset($_POST["location_apply_for"]) ? $_POST["location_apply_for"] : '')."', '".(isset($_POST["before_apply"]) ? $_POST["before_apply"] : '')."', '".(isset($_POST["age_18"]) ? $_POST["age_18"] : '')."', '".(isset($_POST["how_hear"]) ? $_POST["how_hear"] : '')."', '".(isset($_POST["how_hear_referred"]) ? $_POST["how_hear_referred"] : '')."', '".(isset($_POST["start_date"]) ? $_POST["start_date"] : '')."', '".(isset($_POST["perform_essential_functions"]) ? $_POST["perform_essential_functions"] : '')."', '".(isset($_POST["restaurant_experience_food_preparation"]) ? $_POST["restaurant_experience_food_preparation"] : '')."', '".(isset($_POST["restaurant_experience_sanitation"]) ? $_POST["restaurant_experience_sanitation"] : '')."', '".(isset($_POST["able_work_nights"]) ? $_POST["able_work_nights"] : '')."', '".(isset($_POST["food_handler_permit"]) ? $_POST["food_handler_permit"] : '')."', '".(isset($_POST["obtain_food_handler_permit"]) ? $_POST["obtain_food_handler_permit"] : '')."', '".(isset($_POST["available_to_work"]) ? $_POST["available_to_work"] : '')."', '".json_encode($companies)."', '".json_encode($references)."')");
         
+        // send email
+        if(isset($_POST['location_apply_for'])) {
+            if($_POST['location_apply_for'] == '1') {
+                $to = 'clearlake@salata.com';
+            }
+            else if($_POST['location_apply_for'] == '2') {
+                $to = 'baybrook@salata.com';
+            }
+            else if($_POST['location_apply_for'] == '3') {
+                $to = 'pasadena@salata.com';
+            }
+            else if($_POST['location_apply_for'] == '4') {
+                $to = 'pinnaclepark@salata.com';
+            }
+            else if($_POST['location_apply_for'] == '5') {
+                $to = 'kingwood@salata.com';
+            }
+            else if($_POST['location_apply_for'] == '6') {
+                $to = 'westlake@salata.com';
+            }
+            else if($_POST['location_apply_for'] == '7') {
+                $to = 'louettapines@salata.com';
+            }
+            // $to = 'jaygangkun@hotmail.com';
+
+            $name = (isset($_POST["first_name"]) ? $_POST["first_name"] : '').' '.(isset($_POST["middle_name"]) ? $_POST["middle_name"] : '').' '.(isset($_POST["last_name"]) ? $_POST["last_name"] : '');
+            $link = base_url('/apply-view/'.$application_user_id);
+
+            if($to != '') {
+                sendMail($to, 'Submit New Application', '<h1>'.$name.'</h1><a href="'.$link.'">View</a>');
+            }
+        }
+        
+        
         echo json_encode(array(
             'success' => true
         ));
@@ -345,5 +400,9 @@ class Page extends BaseController
         echo json_encode(array(
             'success' => true
         ));
+    }
+
+    public function test() {
+        echo sendMail('jaygangkun@hotmail.com', 'Test', 'Test email');
     }
 }

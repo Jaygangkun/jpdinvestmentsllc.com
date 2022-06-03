@@ -39,6 +39,7 @@ $routes->get('/applications', 'Page::applications');
 $routes->get('/application-view/(:any)', 'Page::applicationView/$1');
 
 $routes->get('/apply', 'Page::apply');
+$routes->get('/apply-view/(:any)', 'Page::applyView/$1');
 $routes->post('/submit-application', 'Page::submitApplication');
 $routes->post('/update-application', 'Page::updateApplication');
 $routes->post('/delete-application', 'Page::deleteApplication');
@@ -49,6 +50,7 @@ $routes->get('/apiApplicatnsLoad', 'Page::apiApplicantsLoad');
 
 $routes->post('/generate-qr', 'Page::generateQR');
 $routes->get('/qrtest', 'Page::qrTest');
+$routes->get('/test', 'Page::test');
 /*
  * --------------------------------------------------------------------
  * Additional Routing
